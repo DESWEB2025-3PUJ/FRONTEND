@@ -1,0 +1,166 @@
+<div class="register-container">
+  <div class="register-card">
+    <div class="register-header">
+      <h1>Crear Cuenta</h1>
+      <p>Registra tu empresa en WikiGroup</p>
+    </div>
+
+    @if (error()) {
+      <div class="alert alert-error">{{ error() }}</div>
+    }
+
+    <form (ngSubmit)="register()" #registerForm="ngForm">
+      <!-- Datos de Empresa -->
+      <div class="form-section">
+        <h3>Datos de la Empresa</h3>
+        
+        <div class="form-group">
+          <label for="empresaNombre">Nombre de la Empresa *</label>
+          <input 
+            type="text" 
+            id="empresaNombre"
+            name="empresaNombre"
+            #empresaNombreInput="ngModel"
+            [(ngModel)]="empresaNombre"
+            required
+            minlength="3"
+            maxlength="100"
+            class="form-control"
+            placeholder="Ej: Mi Empresa S.A.S.">
+          @if (empresaNombreInput.invalid && empresaNombreInput.touched) {
+            <div class="field-error">El nombre debe tener entre 3 y 100 caracteres</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="empresaNit">NIT *</label>
+          <input 
+            type="text" 
+            id="empresaNit"
+            name="empresaNit"
+            #empresaNitInput="ngModel"
+            [(ngModel)]="empresaNit"
+            required
+            minlength="5"
+            maxlength="20"
+            class="form-control"
+            placeholder="Ej: 900123456-7">
+          @if (empresaNitInput.invalid && empresaNitInput.touched) {
+            <div class="field-error">El NIT es requerido</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="empresaCorreo">Correo de Contacto *</label>
+          <input 
+            type="email" 
+            id="empresaCorreo"
+            name="empresaCorreo"
+            #empresaCorreoInput="ngModel"
+            [(ngModel)]="empresaCorreo"
+            required
+            email
+            class="form-control"
+            placeholder="contacto@miempresa.com">
+          @if (empresaCorreoInput.invalid && empresaCorreoInput.touched) {
+            <div class="field-error">Ingresa un correo válido</div>
+          }
+        </div>
+      </div>
+
+      <!-- Datos de Usuario Administrador -->
+      <div class="form-section">
+        <h3>Datos del Administrador</h3>
+        
+        <div class="form-group">
+          <label for="usuarioNombre">Nombre Completo *</label>
+          <input 
+            type="text" 
+            id="usuarioNombre"
+            name="usuarioNombre"
+            #usuarioNombreInput="ngModel"
+            [(ngModel)]="usuarioNombre"
+            required
+            minlength="3"
+            maxlength="100"
+            class="form-control"
+            placeholder="Ej: Juan Pérez">
+          @if (usuarioNombreInput.invalid && usuarioNombreInput.touched) {
+            <div class="field-error">El nombre debe tener entre 3 y 100 caracteres</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="usuarioCorreo">Correo Electrónico *</label>
+          <input 
+            type="email" 
+            id="usuarioCorreo"
+            name="usuarioCorreo"
+            #usuarioCorreoInput="ngModel"
+            [(ngModel)]="usuarioCorreo"
+            required
+            email
+            class="form-control"
+            placeholder="tu@email.com"
+            autocomplete="email">
+          @if (usuarioCorreoInput.invalid && usuarioCorreoInput.touched) {
+            <div class="field-error">Ingresa un correo válido</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="usuarioPassword">Contraseña *</label>
+          <input 
+            type="password" 
+            id="usuarioPassword"
+            name="usuarioPassword"
+            #usuarioPasswordInput="ngModel"
+            [(ngModel)]="usuarioPassword"
+            required
+            minlength="6"
+            class="form-control"
+            placeholder="Mínimo 6 caracteres"
+            autocomplete="new-password">
+          @if (usuarioPasswordInput.invalid && usuarioPasswordInput.touched) {
+            <div class="field-error">La contraseña debe tener al menos 6 caracteres</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="usuarioPasswordConfirm">Confirmar Contraseña *</label>
+          <input 
+            type="password" 
+            id="usuarioPasswordConfirm"
+            name="usuarioPasswordConfirm"
+            #usuarioPasswordConfirmInput="ngModel"
+            [(ngModel)]="usuarioPasswordConfirm"
+            required
+            minlength="6"
+            class="form-control"
+            placeholder="Repite tu contraseña"
+            autocomplete="new-password">
+          @if (usuarioPasswordConfirmInput.touched && usuarioPassword() !== usuarioPasswordConfirm()) {
+            <div class="field-error">Las contraseñas no coinciden</div>
+          }
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary btn-block"
+          [disabled]="loading() || registerForm.invalid || usuarioPassword() !== usuarioPasswordConfirm()">
+          @if (loading()) {
+            Creando cuenta...
+          } @else {
+            Crear Cuenta
+          }
+        </button>
+      </div>
+    </form>
+
+    <div class="register-footer">
+      <p>¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión aquí</a></p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,150 @@
+<div class="proceso-list">
+  <div class="header">
+    <h1>Gestión de Procesos</h1>
+    @if (canEdit()) {
+      <a routerLink="/procesos/nuevo" class="btn btn-primary">
+        + Crear Nuevo Proceso
+      </a>
+    }
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <!-- Filtros -->
+  <div class="filters-card">
+    <h3>Filtros de Búsqueda</h3>
+    <div class="filters-grid">
+      <div class="form-group">
+        <label for="search">Buscar</label>
+        <input 
+          type="text" 
+          id="search"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="aplicarFiltros()"
+          placeholder="Buscar por nombre o descripción..."
+          class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label for="estado">Estado</label>
+        <select 
+          id="estado"
+          [(ngModel)]="filtroEstado"
+          (ngModelChange)="aplicarFiltros()"
+          class="form-control">
+          <option value="">Todos los estados</option>
+          <option value="BORRADOR">BORRADOR</option>
+          <option value="PUBLICADO">PUBLICADO</option>
+          <option value="INACTIVO">INACTIVO</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="categoria">Categoría</label>
+        <input 
+          type="text" 
+          id="categoria"
+          [(ngModel)]="filtroCategoria"
+          (ngModelChange)="aplicarFiltros()"
+          placeholder="Ej: Ventas, RRHH..."
+          class="form-control">
+      </div>
+
+      <div class="form-group filter-actions">
+        <button 
+          type="button" 
+          class="btn btn-outline"
+          (click)="limpiarFiltros()">
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Cargando procesos...</p>
+    </div>
+  }
+
+  <!-- Lista de Procesos -->
+  @if (!loading()) {
+    @if (procesosFiltrados().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <h3>No se encontraron procesos</h3>
+        <p>
+          @if (procesos().length === 0) {
+            Aún no has creado ningún proceso. ¡Comienza creando tu primer proceso!
+          } @else {
+            No hay procesos que coincidan con los filtros aplicados.
+          }
+        </p>
+        @if (canEdit() && procesos().length === 0) {
+          <a routerLink="/procesos/nuevo" class="btn btn-primary">
+            Crear Primer Proceso
+          </a>
+        }
+      </div>
+    } @else {
+      <div class="results-info">
+        Mostrando {{ procesosFiltrados().length }} de {{ procesos().length }} procesos
+      </div>
+
+      <div class="procesos-grid">
+        @for (proceso of procesosFiltrados(); track proceso.id) {
+          <div class="proceso-card">
+            <div class="proceso-header">
+              <h3>{{ proceso.nombre }}</h3>
+              <span class="badge" [class]="getEstadoBadgeClass(proceso.estado)">
+                {{ proceso.estado }}
+              </span>
+            </div>
+            
+            <div class="proceso-body">
+              <p class="proceso-categoria">
+                <strong>Categoría:</strong> {{ proceso.categoria }}
+              </p>
+              <p class="proceso-descripcion">{{ proceso.descripcion }}</p>
+              
+              @if (proceso.fechaCreacion) {
+                <p class="proceso-fecha">
+                  <small>Creado: {{ proceso.fechaCreacion | date:'dd/MM/yyyy' }}</small>
+                </p>
+              }
+            </div>
+            
+            <div class="proceso-actions">
+              <a [routerLink]="['/procesos', proceso.id]" class="btn btn-sm btn-outline">
+                Ver Detalles
+              </a>
+              
+              <a [routerLink]="['/procesos', proceso.id, 'actividades']" class="btn btn-sm btn-info">
+                Actividades
+              </a>
+              
+              @if (canEdit()) {
+                <a [routerLink]="['/procesos/editar', proceso.id]" class="btn btn-sm btn-primary">
+                  Editar
+                </a>
+              }
+              
+              @if (canDelete()) {
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-danger"
+                  (click)="deleteProceso(proceso.id!)">
+                  Eliminar
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

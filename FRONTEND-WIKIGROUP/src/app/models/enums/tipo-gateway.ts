@@ -1,0 +1,5 @@
+export enum TipoGateway {
+  EXCLUSIVO = 'EXCLUSIVO',
+  PARALELO = 'PARALELO',
+  INCLUSIVO = 'INCLUSIVO'
+}

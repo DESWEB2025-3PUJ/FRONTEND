@@ -1,0 +1,128 @@
+<div class="proceso-form">
+  <div class="header">
+    <h2>{{ isEditMode() ? 'Editar Proceso' : 'Crear Nuevo Proceso' }}</h2>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Cargando datos...</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (!loading()) {
+    <form (ngSubmit)="saveProceso()" #procesoForm="ngForm">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="nombre">Nombre del Proceso *</label>
+          <input 
+            type="text" 
+            id="nombre"
+            name="nombre"
+            #nombre="ngModel"
+            [(ngModel)]="proceso().nombre"
+            required
+            minlength="3"
+            maxlength="100"
+            class="form-control"
+            placeholder="Ej: Proceso de Ventas">
+          @if (nombre.invalid && nombre.touched) {
+            <div class="field-error">El nombre debe tener entre 3 y 100 caracteres</div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="categoria">Categoría *</label>
+          <input 
+            type="text" 
+            id="categoria"
+            name="categoria"
+            #categoria="ngModel"
+            [(ngModel)]="proceso().categoria"
+            required
+            minlength="2"
+            maxlength="50"
+            class="form-control"
+            placeholder="Ej: Ventas, Producción, RRHH">
+          @if (categoria.invalid && categoria.touched) {
+            <div class="field-error">La categoría es requerida</div>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="descripcion">Descripción *</label>
+        <textarea 
+          id="descripcion"
+          name="descripcion"
+          #descripcion="ngModel"
+          [(ngModel)]="proceso().descripcion"
+          required
+          minlength="10"
+          maxlength="500"
+          rows="5"
+          class="form-control"
+          placeholder="Describe el propósito y alcance del proceso..."></textarea>
+        @if (descripcion.invalid && descripcion.touched) {
+          <div class="field-error">La descripción debe tener entre 10 y 500 caracteres</div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="estado">Estado *</label>
+        <select 
+          id="estado"
+          name="estado"
+          #estado="ngModel"
+          [(ngModel)]="proceso().estado"
+          required
+          class="form-control">
+          @for (est of estadosDisponibles; track est) {
+            <option [value]="est">{{ est }}</option>
+          }
+        </select>
+        @if (estado.invalid && estado.touched) {
+          <div class="field-error">Debe seleccionar un estado</div>
+        }
+      </div>
+
+      <div class="form-info">
+        <p>
+          <strong>Estado BORRADOR:</strong> El proceso está en construcción y puede ser editado libremente.<br>
+          <strong>Estado PUBLICADO:</strong> El proceso está listo para ser usado por la organización.<br>
+          <strong>Estado INACTIVO:</strong> El proceso ya no se usa pero se mantiene para trazabilidad.
+        </p>
+      </div>
+
+      <div class="form-actions">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="cancel()">
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-outline"
+          (click)="procesoForm.resetForm()"
+          [disabled]="saving()">
+          Limpiar
+        </button>
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="saving() || procesoForm.invalid">
+          @if (saving()) {
+            Guardando...
+          } @else {
+            {{ isEditMode() ? 'Actualizar' : 'Crear' }} Proceso
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>

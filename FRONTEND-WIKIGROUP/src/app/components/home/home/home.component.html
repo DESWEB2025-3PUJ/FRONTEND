@@ -1,0 +1,64 @@
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1 class="hero-title">WikiGroup</h1>
+      <p class="hero-subtitle">Sistema de Gestión de Procesos Empresariales</p>
+      <p class="hero-description">
+        Documenta, visualiza y gestiona los procesos de tu organización de manera eficiente y colaborativa.
+      </p>
+      
+      <div class="hero-actions">
+        @if (authService.isLoggedIn()) {
+          <a routerLink="/procesos" class="btn btn-primary btn-large">
+            Ver Procesos
+          </a>
+          <a routerLink="/procesos/nuevo" class="btn btn-outline btn-large">
+            Crear Proceso
+          </a>
+        } @else {
+          <a routerLink="/register" class="btn btn-primary btn-large">
+            Comenzar Gratis
+          </a>
+          <a routerLink="/login" class="btn btn-outline btn-large">
+            Iniciar Sesión
+          </a>
+        }
+      </div>
+    </div>
+    
+    <div class="hero-illustration">
+      <div class="illustration-card">
+        <span class="illustration-icon">📊</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <h2 class="section-title">Características Principales</h2>
+    
+    <div class="features-grid">
+      @for (feature of features; track feature.title) {
+        <div class="feature-card">
+          <div class="feature-icon">{{ feature.icon }}</div>
+          <h3 class="feature-title">{{ feature.title }}</h3>
+          <p class="feature-description">{{ feature.description }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  @if (!authService.isLoggedIn()) {
+    <section class="cta">
+      <h2 class="cta-title">¿Listo para optimizar tus procesos?</h2>
+      <p class="cta-description">
+        Únete a las empresas que ya están mejorando su gestión de procesos con WikiGroup.
+      </p>
+      <a routerLink="/register" class="btn btn-primary btn-large">
+        Crear Cuenta Gratis
+      </a>
+    </section>
+  }
+</div>

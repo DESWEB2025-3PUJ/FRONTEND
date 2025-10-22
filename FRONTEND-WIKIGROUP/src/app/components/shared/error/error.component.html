@@ -1,0 +1,13 @@
+<div class="alert alert-danger" role="alert">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <div class="flex-grow-1">
+      {{ message() }}
+    </div>
+    @if (showRetry()) {
+      <button class="btn btn-sm btn-outline-danger" (click)="onRetry()">
+        <i class="bi bi-arrow-clockwise"></i> Reintentar
+      </button>
+    }
+  </div>
+</div>

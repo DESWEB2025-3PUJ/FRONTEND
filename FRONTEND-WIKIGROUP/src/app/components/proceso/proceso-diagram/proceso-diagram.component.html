@@ -1,0 +1,118 @@
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2>Diagrama del Proceso</h2>
+          @if (proceso()) {
+            <p class="text-muted mb-0">{{ proceso()!.nombre }}</p>
+          }
+        </div>
+        <div class="btn-group">
+          <a [routerLink]="['/procesos', proceso()?.id]" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+          <a [routerLink]="['/procesos', proceso()?.id, 'actividades']" class="btn btn-info">
+            <i class="bi bi-list-task"></i> Ver Actividades
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Diagrama -->
+  @if (!loading() && proceso()) {
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Vista de Diagrama BPMN</h5>
+      </div>
+      <div class="card-body">
+        @if (actividades().length > 0) {
+          <div class="diagram-container">
+            <div class="alert alert-info mb-4">
+              <i class="bi bi-info-circle"></i>
+              Este es un diagrama simplificado de las actividades del proceso.
+              Para una vista completa de BPMN, se requiere implementar una librería especializada como bpmn-js.
+            </div>
+
+            <!-- Diagrama Simple -->
+            <div class="simple-diagram">
+              <div class="diagram-flow">
+                @for (actividad of actividades(); track actividad.id; let i = $index) {
+                  <div class="diagram-node">
+                    <div class="node-content" [class]="'node-' + actividad.tipo.toLowerCase()">
+                      <div class="node-header">
+                        <span class="badge bg-secondary">{{ actividad.tipo }}</span>
+                      </div>
+                      <div class="node-body">
+                        <strong>{{ actividad.nombre }}</strong>
+                        <p class="small mb-0 text-muted">{{ actividad.descripcion }}</p>
+                        @if (actividad.duracionEstimada) {
+                          <small class="text-muted">
+                            <i class="bi bi-clock"></i> {{ actividad.duracionEstimada }} min
+                          </small>
+                        }
+                      </div>
+                    </div>
+                    @if (i < actividades().length - 1) {
+                      <div class="diagram-arrow">
+                        <i class="bi bi-arrow-down"></i>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Leyenda -->
+            <div class="mt-4">
+              <h6>Leyenda de Tipos de Actividad:</h6>
+              <div class="d-flex gap-3 flex-wrap">
+                <div class="d-flex align-items-center">
+                  <div class="legend-box node-tarea"></div>
+                  <span class="ms-2">Tarea</span>
+                </div>
+                <div class="d-flex align-items-center">
+                  <div class="legend-box node-subproceso"></div>
+                  <span class="ms-2">Subproceso</span>
+                </div>
+                <div class="d-flex align-items-center">
+                  <div class="legend-box node-evento_inicio"></div>
+                  <span class="ms-2">Evento Inicio</span>
+                </div>
+                <div class="d-flex align-items-center">
+                  <div class="legend-box node-evento_fin"></div>
+                  <span class="ms-2">Evento Fin</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="text-center py-5">
+            <i class="bi bi-diagram-3 text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3">No hay actividades para mostrar en el diagrama</p>
+            <a [routerLink]="['/procesos', proceso()!.id, 'actividades', 'nueva']" class="btn btn-primary">
+              Crear Primera Actividad
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

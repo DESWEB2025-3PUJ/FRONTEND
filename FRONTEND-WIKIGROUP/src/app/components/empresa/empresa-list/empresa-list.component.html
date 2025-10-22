@@ -1,0 +1,68 @@
+<div class="container mt-4">
+  <h2 class="mb-4">Información de la Empresa</h2>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Empresa Info -->
+  @if (empresa() && !loading()) {
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ empresa()!.nombre }}</h5>
+        @if (isAdmin()) {
+          <a [routerLink]="['/empresas/editar', empresa()!.id]" class="btn btn-sm btn-primary">
+            <i class="bi bi-pencil"></i> Editar
+          </a>
+        }
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">NIT</label>
+            <p class="mb-0">{{ empresa()!.nit }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Correo</label>
+            <p class="mb-0">{{ empresa()!.correo }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Teléfono</label>
+            <p class="mb-0">{{ empresa()!.telefono || 'No especificado' }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Dirección</label>
+            <p class="mb-0">{{ empresa()!.direccion || 'No especificada' }}</p>
+          </div>
+          <div class="col-md-12 mb-3">
+            <label class="text-muted small">Descripción</label>
+            <p class="mb-0">{{ empresa()!.descripcion || 'No especificada' }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer text-muted small">
+        @if (empresa()!.fechaCreacion) {
+          Registrada el: {{ empresa()!.fechaCreacion | date: 'dd/MM/yyyy' }}
+        }
+      </div>
+    </div>
+  }
+
+  @if (!empresa() && !loading() && !error()) {
+    <div class="alert alert-info" role="alert">
+      <i class="bi bi-info-circle"></i> No se encontró información de la empresa.
+    </div>
+  }
+</div>
