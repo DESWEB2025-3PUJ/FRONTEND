@@ -24,11 +24,11 @@ export class CanvasDrawComponent implements AfterViewInit {
       selection: false
     });
 
-    // 🔄 Actualiza las líneas cuando se mueven los nodos
+    // Actualiza las líneas cuando se mueven los nodos
     this.canvas.on('object:moving', () => this.updateConnections());
   }
 
-  /** 🟩 Crear un nodo visual */
+  /** Crear un nodo visual */
   public addNode(type: string, x: number, y: number) {
     const colors: Record<string, string> = {
       inicio: '#22c55e',
@@ -69,7 +69,7 @@ export class CanvasDrawComponent implements AfterViewInit {
     this.nodes.push(node);
   }
 
-  /** 🖱️ Maneja el clic en un nodo (inicio o fin de conexión) */
+  /** Maneja el clic en un nodo (inicio o fin de conexión) */
   private handleNodeClick(node: fabric.Group) {
     if (!this.sourceNode) {
       // Primer clic → empezar línea temporal
@@ -101,7 +101,7 @@ export class CanvasDrawComponent implements AfterViewInit {
     }
   }
 
-  /** ✏️ Mueve la punta de la línea mientras se arrastra el mouse */
+  /** Mueve la punta de la línea mientras se arrastra el mouse */
   private handleMouseMove(event: any) {
     if (!this.tempLine) return;
     const pointer = this.canvas.getPointer(event.e);
@@ -109,7 +109,7 @@ export class CanvasDrawComponent implements AfterViewInit {
     this.canvas.requestRenderAll();
   }
 
-  /** 🔵 Crear línea definitiva entre dos nodos */
+  /**  Crear línea definitiva entre dos nodos */
   private createConnection(from: fabric.Group, to: fabric.Group) {
     const { x1, y1, x2, y2 } = this.calculateEdgePoints(from, to);
     const line = new fabric.Line([x1, y1, x2, y2], {
@@ -120,12 +120,12 @@ export class CanvasDrawComponent implements AfterViewInit {
     });
 
     this.canvas.add(line);
-    this.canvas.sendObjectToBack(line); // ✅ correcto en Fabric v6
+    this.canvas.sendObjectToBack(line); 
     this.lines.push({ from, to, line });
     this.updateConnections();
   }
 
-  /** 🔄 Reposicionar líneas cuando se mueven los nodos */
+  /** Reposicionar líneas cuando se mueven los nodos */
   private updateConnections() {
     for (const conn of this.lines) {
       const { x1, y1, x2, y2 } = this.calculateEdgePoints(conn.from, conn.to);
@@ -134,7 +134,7 @@ export class CanvasDrawComponent implements AfterViewInit {
     this.canvas.requestRenderAll();
   }
 
-  /** 📐 Calcula los puntos de conexión en los bordes */
+  /**  Calcula los puntos de conexión en los bordes */
   private calculateEdgePoints(r1: fabric.Group, r2: fabric.Group) {
     const c1 = r1.getCenterPoint();
     const c2 = r2.getCenterPoint();
