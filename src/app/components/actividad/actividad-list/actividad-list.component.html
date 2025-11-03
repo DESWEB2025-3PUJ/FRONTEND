@@ -1,0 +1,145 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>Actividades del Proceso</h2>
+      <p class="text-muted mb-0">{{ procesoNombre() }}</p>
+    </div>
+    <div>
+      <a [routerLink]="['/procesos', procesoId(), 'actividades', 'nueva']" class="btn btn-primary me-2">
+        <i class="bi bi-plus-circle"></i> Nueva Actividad
+      </a>
+      <a [routerLink]="['/procesos']" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
+    </div>
+  </div>
+
+  <!-- Filtros de Búsqueda -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Filtros de Búsqueda</h5>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="searchTerm" class="form-label">Buscar</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            id="searchTerm"
+            [(ngModel)]="searchTerm"
+            (ngModelChange)="aplicarFiltros()"
+            placeholder="Buscar por nombre o descripción...">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="filtroTipo" class="form-label">Tipo</label>
+          <select 
+            class="form-select" 
+            id="filtroTipo"
+            [(ngModel)]="filtroTipo"
+            (ngModelChange)="aplicarFiltros()">
+            <option value="">Todos los tipos</option>
+            @for (tipo of tiposDisponibles; track tipo) {
+              <option [value]="tipo">{{ tipo }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2 mb-3 d-flex align-items-end">
+          <button class="btn btn-outline-secondary w-100" (click)="limpiarFiltros()">
+            Limpiar Filtros
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="text-center">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Lista de Actividades -->
+  @if (!loading() && actividadesFiltradas().length > 0) {
+    <div class="row">
+      @for (actividad of actividadesFiltradas(); track actividad.id) {
+        <div class="col-md-6 col-lg-4 mb-3">
+          <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h6 class="mb-0">{{ actividad.nombre }}</h6>
+              <span [class]="'badge ' + getTipoBadgeClass(actividad.tipo)">
+                {{ actividad.tipo }}
+              </span>
+            </div>
+            <div class="card-body">
+              <p class="card-text text-muted small">{{ actividad.descripcion }}</p>
+              <div class="mt-2">
+                <small class="text-muted">
+                  <i class="bi bi-clock"></i> Duración: {{ actividad.duracionEstimada }} min
+                </small>
+              </div>
+              @if (actividad.roleId) {
+                <div class="mt-1">
+                  <small class="text-muted">
+                    <i class="bi bi-person"></i> Role ID: {{ actividad.roleId }}
+                  </small>
+                </div>
+              }
+            </div>
+            <div class="card-footer bg-transparent">
+              <div class="btn-group w-100" role="group">
+                <a 
+                  [routerLink]="['/procesos', procesoId(), 'actividades', actividad.id]" 
+                  class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-eye"></i> Ver
+                </a>
+                @if (canEdit()) {
+                  <a 
+                    [routerLink]="['/procesos', procesoId(), 'actividades', 'editar', actividad.id]" 
+                    class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                  </a>
+                }
+                @if (canDelete()) {
+                  <button 
+                    (click)="deleteActividad(actividad.id!)" 
+                    class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i> Eliminar
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Sin resultados -->
+  @if (!loading() && actividadesFiltradas().length === 0 && actividades().length > 0) {
+    <div class="text-center py-5">
+      <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+      <p class="text-muted mt-3">No se encontraron actividades con los filtros aplicados</p>
+      <button class="btn btn-primary" (click)="limpiarFiltros()">Limpiar Filtros</button>
+    </div>
+  }
+
+  <!-- Sin actividades -->
+  @if (!loading() && actividades().length === 0) {
+    <div class="text-center py-5">
+      <i class="bi bi-list-task text-muted" style="font-size: 3rem;"></i>
+      <p class="text-muted mt-3">Aún no has creado ninguna actividad. ¡Comienza creando tu primera actividad!</p>
+      <a [routerLink]="['/procesos', procesoId(), 'actividades', 'nueva']" class="btn btn-primary">
+        Crear Primera Actividad
+      </a>
+    </div>
+  }
+</div>

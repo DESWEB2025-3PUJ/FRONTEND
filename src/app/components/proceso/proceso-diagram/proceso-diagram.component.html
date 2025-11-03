@@ -1,0 +1,40 @@
+<div class="diagram-page">
+  <button class="btn-volver" (click)="backToList()">← Volver</button>
+
+  <h2 class="title">Editor de Procesos</h2>
+  <p class="subtitle">Arrastra componentes desde la izquierda y conéctalos.</p>
+
+  <div class="editor-container">
+    <!-- Panel lateral -->
+    <aside class="sidebar">
+      <h3>Componentes</h3>
+      <div
+        class="node-option inicio"
+        draggable="true"
+        (dragstart)="onDragStart($event, 'inicio')"
+      >Inicio</div>
+      <div
+        class="node-option actividad"
+        draggable="true"
+        (dragstart)="onDragStart($event, 'actividad')"
+      >Actividad</div>
+      <div
+        class="node-option decision"
+        draggable="true"
+        (dragstart)="onDragStart($event, 'decision')"
+      >Decisión</div>
+      <div
+        class="node-option fin"
+        draggable="true"
+        (dragstart)="onDragStart($event, 'fin')"
+      >Fin</div>
+
+      <p class="tip">Consejo: conecta arrastrando desde los puntos azules.</p>
+    </aside>
+
+    <!-- Área de dibujo -->
+    <section class="canvas-area" (drop)="onCanvasDrop($event)" (dragover)="onCanvasDragOver($event)">
+      <app-canvas-draw></app-canvas-draw>
+    </section>
+  </div>
+</div>

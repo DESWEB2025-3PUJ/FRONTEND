@@ -1,0 +1,89 @@
+<div class="role-form">
+  <div class="header">
+    <h2>{{ isEditMode() ? 'Editar Rol de Proceso' : 'Crear Nuevo Rol' }}</h2>
+  </div>
+
+  @if (loading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Cargando datos...</p>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (!loading()) {
+    <form (ngSubmit)="saveRole()" #roleForm="ngForm">
+      <div class="form-group">
+        <label for="nombre">Nombre del Rol *</label>
+        <input 
+          type="text" 
+          id="nombre"
+          name="nombre"
+          #nombre="ngModel"
+          [(ngModel)]="role().nombre"
+          required
+          minlength="2"
+          maxlength="50"
+          class="form-control"
+          placeholder="Ej: Analista, Supervisor, Auditor">
+        @if (nombre.invalid && nombre.touched) {
+          <div class="field-error">El nombre debe tener entre 2 y 50 caracteres</div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="descripcion">Descripción *</label>
+        <textarea 
+          id="descripcion"
+          name="descripcion"
+          #descripcion="ngModel"
+          [(ngModel)]="role().descripcion"
+          required
+          minlength="10"
+          maxlength="300"
+          rows="4"
+          class="form-control"
+          placeholder="Describe las responsabilidades y funciones de este rol..."></textarea>
+        @if (descripcion.invalid && descripcion.touched) {
+          <div class="field-error">La descripción debe tener entre 10 y 300 caracteres</div>
+        }
+      </div>
+
+      <div class="form-info">
+        <p>
+          <strong>Nota:</strong> Los roles de proceso se utilizan para asignar responsabilidades a las actividades. 
+          Un mismo rol puede ser asignado a múltiples actividades en diferentes procesos.
+        </p>
+      </div>
+
+      <div class="form-actions">
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="cancel()">
+          Cancelar
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-outline"
+          (click)="roleForm.resetForm()"
+          [disabled]="saving()">
+          Limpiar
+        </button>
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="saving() || roleForm.invalid">
+          @if (saving()) {
+            Guardando...
+          } @else {
+            {{ isEditMode() ? 'Actualizar' : 'Crear' }} Rol
+          }
+        </button>
+      </div>
+    </form>
+  }
+</div>

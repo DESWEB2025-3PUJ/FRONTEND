@@ -1,0 +1,170 @@
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">Editar Información de la Empresa</h3>
+        </div>
+        <div class="card-body">
+          <!-- Loading -->
+          @if (loading()) {
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          }
+
+          <!-- Error -->
+          @if (error()) {
+            <div class="alert alert-danger" role="alert">
+              {{ error() }}
+            </div>
+          }
+
+          <!-- Formulario -->
+          @if (!loading()) {
+            <form #empresaForm="ngForm" (ngSubmit)="saveEmpresa()">
+              <!-- Nombre -->
+              <div class="mb-3">
+                <label for="nombre" class="form-label">
+                  Nombre de la Empresa <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="nombre"
+                  name="nombre"
+                  [(ngModel)]="empresa().nombre"
+                  #nombre="ngModel"
+                  required
+                  maxlength="100"
+                  placeholder="Ej: Mi Empresa S.A.S.">
+                @if (nombre.invalid && nombre.touched) {
+                  <div class="text-danger small mt-1">
+                    El nombre es requerido
+                  </div>
+                }
+              </div>
+
+              <!-- NIT -->
+              <div class="mb-3">
+                <label for="nit" class="form-label">
+                  NIT <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="nit"
+                  name="nit"
+                  [(ngModel)]="empresa().nit"
+                  #nit="ngModel"
+                  required
+                  maxlength="20"
+                  placeholder="Ej: 900123456-7">
+                @if (nit.invalid && nit.touched) {
+                  <div class="text-danger small mt-1">
+                    El NIT es requerido
+                  </div>
+                }
+              </div>
+
+              <!-- Correo -->
+              <div class="mb-3">
+                <label for="correo" class="form-label">
+                  Correo Electrónico <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  id="correo"
+                  name="correo"
+                  [(ngModel)]="empresa().correo"
+                  #correo="ngModel"
+                  required
+                  email
+                  maxlength="100"
+                  placeholder="contacto@empresa.com">
+                @if (correo.invalid && correo.touched) {
+                  <div class="text-danger small mt-1">
+                    @if (correo.errors?.['required']) {
+                      El correo es requerido
+                    }
+                    @if (correo.errors?.['email']) {
+                      El correo no tiene un formato válido
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Teléfono -->
+              <div class="mb-3">
+                <label for="telefono" class="form-label">
+                  Teléfono
+                </label>
+                <input 
+                  type="tel" 
+                  class="form-control" 
+                  id="telefono"
+                  name="telefono"
+                  [(ngModel)]="empresa().telefono"
+                  maxlength="20"
+                  placeholder="Ej: +57 300 123 4567">
+              </div>
+
+              <!-- Dirección -->
+              <div class="mb-3">
+                <label for="direccion" class="form-label">
+                  Dirección
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="direccion"
+                  name="direccion"
+                  [(ngModel)]="empresa().direccion"
+                  maxlength="200"
+                  placeholder="Ej: Calle 123 #45-67">
+              </div>
+
+              <!-- Descripción -->
+              <div class="mb-3">
+                <label for="descripcion" class="form-label">
+                  Descripción
+                </label>
+                <textarea 
+                  class="form-control" 
+                  id="descripcion"
+                  name="descripcion"
+                  [(ngModel)]="empresa().descripcion"
+                  rows="3"
+                  maxlength="500"
+                  placeholder="Describe tu empresa..."></textarea>
+              </div>
+
+              <!-- Botones -->
+              <div class="d-flex justify-content-end gap-2">
+                <button 
+                  type="button" 
+                  class="btn btn-secondary" 
+                  (click)="cancel()"
+                  [disabled]="saving()">
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  class="btn btn-primary"
+                  [disabled]="empresaForm.invalid || saving()">
+                  @if (saving()) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                  }
+                  Actualizar Empresa
+                </button>
+              </div>
+            </form>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

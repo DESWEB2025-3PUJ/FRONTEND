@@ -1,0 +1,179 @@
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="mb-0">{{ isEditMode() ? 'Editar' : 'Nueva' }} Actividad</h3>
+          <p class="text-muted mb-0 small">Proceso: {{ procesoNombre() }}</p>
+        </div>
+        <div class="card-body">
+          <!-- Loading -->
+          @if (loading()) {
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+            </div>
+          }
+
+          <!-- Error -->
+          @if (error()) {
+            <div class="alert alert-danger" role="alert">
+              {{ error() }}
+            </div>
+          }
+
+          <!-- Formulario -->
+          @if (!loading()) {
+            <form #actividadForm="ngForm" (ngSubmit)="saveActividad()">
+              <!-- Nombre -->
+              <div class="mb-3">
+                <label for="nombre" class="form-label">
+                  Nombre <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="nombre"
+                  name="nombre"
+                  [(ngModel)]="actividad().nombre"
+                  #nombre="ngModel"
+                  required
+                  maxlength="100"
+                  placeholder="Ej: Registrar cliente">
+                @if (nombre.invalid && nombre.touched) {
+                  <div class="text-danger small mt-1">
+                    El nombre es requerido
+                  </div>
+                }
+              </div>
+
+              <!-- Descripción -->
+              <div class="mb-3">
+                <label for="descripcion" class="form-label">
+                  Descripción <span class="text-danger">*</span>
+                </label>
+                <textarea 
+                  class="form-control" 
+                  id="descripcion"
+                  name="descripcion"
+                  [(ngModel)]="actividad().descripcion"
+                  #descripcion="ngModel"
+                  required
+                  rows="3"
+                  maxlength="500"
+                  placeholder="Describe la actividad..."></textarea>
+                @if (descripcion.invalid && descripcion.touched) {
+                  <div class="text-danger small mt-1">
+                    La descripción es requerida
+                  </div>
+                }
+              </div>
+
+              <!-- Tipo -->
+              <div class="mb-3">
+                <label for="tipo" class="form-label">
+                  Tipo <span class="text-danger">*</span>
+                </label>
+                <select 
+                  class="form-select" 
+                  id="tipo"
+                  name="tipo"
+                  [(ngModel)]="actividad().tipo"
+                  #tipo="ngModel"
+                  required>
+                  <option value="">Selecciona un tipo</option>
+                  @for (tipoActividad of tiposDisponibles; track tipoActividad) {
+                    <option [value]="tipoActividad">{{ tipoActividad }}</option>
+                  }
+                </select>
+                @if (tipo.invalid && tipo.touched) {
+                  <div class="text-danger small mt-1">
+                    El tipo es requerido
+                  </div>
+                }
+              </div>
+
+              <!-- Duración Estimada -->
+              <div class="mb-3">
+                <label for="duracionEstimada" class="form-label">
+                  Duración Estimada (minutos) <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  id="duracionEstimada"
+                  name="duracionEstimada"
+                  [(ngModel)]="actividad().duracionEstimada"
+                  #duracionEstimada="ngModel"
+                  required
+                  min="1"
+                  placeholder="Ej: 30">
+                @if (duracionEstimada.invalid && duracionEstimada.touched) {
+                  <div class="text-danger small mt-1">
+                    La duración debe ser mayor a 0
+                  </div>
+                }
+              </div>
+
+              <!-- Role (Opcional) -->
+              <div class="mb-3">
+                <label for="roleId" class="form-label">
+                  Role Asignado (Opcional)
+                </label>
+                <select 
+                  class="form-select" 
+                  id="roleId"
+                  name="roleId"
+                  [(ngModel)]="actividad().roleId">
+                  <option [value]="null">Sin role asignado</option>
+                  @for (role of rolesDisponibles(); track role.id) {
+                    <option [value]="role.id">{{ role.nombre }}</option>
+                  }
+                </select>
+                <small class="text-muted">
+                  Selecciona el role que ejecutará esta actividad
+                </small>
+              </div>
+
+              <!-- Instrucciones (Opcional) -->
+              <div class="mb-3">
+                <label for="instrucciones" class="form-label">
+                  Instrucciones (Opcional)
+                </label>
+                <textarea 
+                  class="form-control" 
+                  id="instrucciones"
+                  name="instrucciones"
+                  [(ngModel)]="actividad().instrucciones"
+                  rows="3"
+                  maxlength="1000"
+                  placeholder="Instrucciones detalladas para ejecutar la actividad..."></textarea>
+              </div>
+
+              <!-- Botones -->
+              <div class="d-flex justify-content-end gap-2">
+                <button 
+                  type="button" 
+                  class="btn btn-secondary" 
+                  (click)="cancel()"
+                  [disabled]="saving()">
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  class="btn btn-primary"
+                  [disabled]="actividadForm.invalid || saving()">
+                  @if (saving()) {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                  }
+                  {{ isEditMode() ? 'Actualizar' : 'Crear' }} Actividad
+                </button>
+              </div>
+            </form>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

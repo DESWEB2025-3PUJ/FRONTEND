@@ -1,0 +1,145 @@
+:host {
+  display: block;
+  padding: 16px 0 24px;
+}
+
+/* Barra superior */
+.wg-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.wg-toolbar .title {
+  font-weight: 700;
+}
+.wg-toolbar .subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+.wg-toolbar .left,
+.wg-toolbar .right {
+  width: 220px;
+  display: flex;
+  align-items: center;
+}
+.wg-toolbar .center {
+  flex: 1;
+  text-align: center;
+}
+
+/* Layout: paleta / lienzo */
+.wg-editor {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  min-height: calc(100vh - 160px);
+}
+
+/* Paleta */
+.wg-palette {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  height: fit-content;
+}
+.palette-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  cursor: grab;
+  user-select: none;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.pi-inicio {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+.pi-actividad {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+.pi-decision {
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+.pi-fin {
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+.hint {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* Lienzo */
+.wg-canvas-wrapper {
+  position: relative;
+}
+.wg-canvas {
+  position: relative;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  min-height: calc(100vh - 200px);
+  overflow: auto;
+}
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+/* Nodos */
+.node {
+  position: absolute;
+  min-width: 160px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: #0f172a;
+  font-weight: 700;
+  cursor: grab;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+  text-align: center;
+  border: 1px solid transparent;
+}
+.node:active {
+  cursor: grabbing;
+}
+.node--inicio {
+  background: #22c55e;
+  color: #fff;
+}
+.node--actividad {
+  background: #60a5fa;
+  color: #fff;
+}
+.node--decision {
+  background: #f59e0b;
+  color: #fff;
+}
+.node--fin {
+  background: #ef4444;
+  color: #fff;
+}
+.is-selected {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
+/* Conectores jsPlumb */
+.jtk-connector {
+  stroke: #334155;
+  stroke-width: 2;
+}
+.jtk-endpoint {
+  fill: #2563eb;
+  stroke: #fff;
+  stroke-width: 2;
+}

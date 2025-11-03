@@ -1,0 +1,6 @@
+export enum TipoActividad {
+  TAREA = 'TAREA',
+  SUBPROCESO = 'SUBPROCESO',
+  EVENTO_INICIO = 'EVENTO_INICIO',
+  EVENTO_FIN = 'EVENTO_FIN'
+}

@@ -1,0 +1,117 @@
+<div class="role-list">
+  <div class="header">
+    <h1>Gestión de Roles de Proceso</h1>
+    <a routerLink="/roles/nuevo" class="btn btn-primary">
+      + Crear Nuevo Rol
+    </a>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <!-- Filtro de búsqueda -->
+  <div class="search-card">
+    <div class="search-group">
+      <label for="search">Buscar Roles</label>
+      <div class="search-input-wrapper">
+        <input 
+          type="text" 
+          id="search"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="aplicarFiltros()"
+          placeholder="Buscar por nombre o descripción..."
+          class="form-control">
+        @if (searchTerm()) {
+          <button 
+            type="button" 
+            class="btn-clear"
+            (click)="limpiarFiltros()">
+            ✕
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Cargando roles...</p>
+    </div>
+  }
+
+  <!-- Lista de Roles -->
+  @if (!loading()) {
+    @if (rolesFiltrados().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">👥</div>
+        <h3>No se encontraron roles</h3>
+        <p>
+          @if (roles().length === 0) {
+            Aún no has creado ningún rol de proceso. Los roles te permiten asignar responsabilidades a las actividades.
+          } @else {
+            No hay roles que coincidan con la búsqueda.
+          }
+        </p>
+        @if (roles().length === 0) {
+          <a routerLink="/roles/nuevo" class="btn btn-primary">
+            Crear Primer Rol
+          </a>
+        }
+      </div>
+    } @else {
+      <div class="results-info">
+        Mostrando {{ rolesFiltrados().length }} de {{ roles().length }} roles
+      </div>
+
+      <div class="table-container">
+        <table class="roles-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Fecha Creación</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (role of rolesFiltrados(); track role.id) {
+              <tr>
+                <td>
+                  <strong>{{ role.nombre }}</strong>
+                </td>
+                <td>
+                  <p class="role-descripcion">{{ role.descripcion }}</p>
+                </td>
+                <td>
+                  @if (role.fechaCreacion) {
+                    {{ role.fechaCreacion | date:'dd/MM/yyyy' }}
+                  }
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a 
+                      [routerLink]="['/roles/editar', role.id]" 
+                      class="btn btn-sm btn-primary"
+                      title="Editar rol">
+                      Editar
+                    </a>
+                    <button 
+                      type="button" 
+                      class="btn btn-sm btn-danger"
+                      (click)="deleteRole(role.id!)"
+                      title="Eliminar rol">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>
