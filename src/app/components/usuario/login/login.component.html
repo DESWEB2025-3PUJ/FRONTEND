@@ -9,7 +9,7 @@
       <div class="alert alert-error">{{ error() }}</div>
     }
 
-    <form (ngSubmit)="login()" #loginForm="ngForm">
+    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
       <div class="form-group">
         <label for="correo">Correo Electrónico *</label>
         <input 
@@ -17,7 +17,8 @@
           id="correo"
           name="correo"
           #correoInput="ngModel"
-          [(ngModel)]="correo"
+          [ngModel]="loginDto().correo"
+          (ngModelChange)="updateCorreo($event)"
           required
           email
           class="form-control"
@@ -35,7 +36,8 @@
           id="password"
           name="password"
           #passwordInput="ngModel"
-          [(ngModel)]="password"
+          [ngModel]="loginDto().password"
+          (ngModelChange)="updatePassword($event)"
           required
           minlength="6"
           class="form-control"

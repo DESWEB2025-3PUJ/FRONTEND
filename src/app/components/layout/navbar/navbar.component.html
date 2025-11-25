@@ -14,7 +14,7 @@
     </button>
 
     <div class="navbar-menu" [class.active]="isMenuOpen">
-      @if (currentUser$ | async; as user) {
+      @if (currentUser(); as user) {
         <!-- Usuario autenticado -->
         <a routerLink="/home" routerLinkActive="active" class="nav-link">
           Inicio
@@ -30,7 +30,7 @@
           </a>
         }
 
-        @if (authService.isAdmin()) {
+        @if (authService.isAdministrador()) {
           <a routerLink="/empresas" routerLinkActive="active" class="nav-link">
             Empresas
           </a>

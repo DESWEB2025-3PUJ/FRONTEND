@@ -1,8 +1,12 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../shared/services/auth/auth.service';
 
+/**
+ * Componente de navegación principal
+ * Muestra menú dinámico según el estado de autenticación y rol del usuario
+ */
 @Component({
   selector: 'app-navbar',
   imports: [CommonModule, RouterLink, RouterLinkActive],
@@ -12,7 +16,9 @@ import { AuthService } from '../../../shared/services/auth/auth.service';
 export class NavbarComponent {
   authService = inject(AuthService);
   
-  currentUser$ = this.authService.currentUser$;
+  // Computed signal que obtiene el usuario actual desde sessionStorage
+  currentUser = computed(() => this.authService.getCurrentUser());
+  
   isMenuOpen = false;
 
   toggleMenu(): void {

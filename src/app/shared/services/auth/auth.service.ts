@@ -1,113 +1,287 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable, signal, PLATFORM_ID } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { Observable, BehaviorSubject, tap, catchError } from 'rxjs';
-import { Usuario } from '../../../models';
+import { Observable, tap } from 'rxjs';
+import { Usuario, UsuarioRol } from '../../../models';
 import { environment } from '../../../../environments/environment.development';
-import { ErrorHandlerService } from '../http/error-handler.service';
 
-export interface LoginRequest {
+// ============================================
+// Interfaces para autenticación JWT
+// ============================================
+
+/**
+ * Estructura para el registro de empresa y usuario administrador (HU-01)
+ */
+export interface SignupRequest {
+  empresa: {
+    nombre: string;
+    nit: string;
+    correoContacto: string;
+    descripcion?: string;
+  };
+  usuario: {
+    nombre: string;
+    email: string;
+    password: string;
+  };
+}
+
+/**
+ * Estructura para el login (HU-03)
+ */
+export interface LoginDto {
   correo: string;
   password: string;
 }
 
-export interface LoginResponse {
+/**
+ * Respuesta del backend para registro y login
+ */
+export interface JwtAuthenticationResponse {
   token: string;
-  usuario: Usuario;
+  usuario: {
+    id: number;
+    nombre: string;
+    email: string;
+    rol: string;
+    empresaId: number;
+    password?: null;
+  };
 }
 
+// ============================================
+// Claves para sessionStorage
+// ============================================
+const STORAGE_KEYS = {
+  JWT_TOKEN: 'JWT_TOKEN',
+  EMAIL: 'EMAIL',
+  ROLE: 'ROLE',
+  NOMBRE: 'NOMBRE',
+  ID_USUARIO: 'ID_USUARIO',
+  EMPRESA_ID: 'EMPRESA_ID'
+} as const;
+
+/**
+ * Servicio de autenticación JWT para Angular 18+
+ * Implementa autenticación con Spring Boot Backend
+ * Usa sessionStorage para almacenamiento de datos
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   
-  private http = inject(HttpClient);
-  private router = inject(Router);
-  private errorHandler = inject(ErrorHandlerService);
-  private platformId = inject(PLATFORM_ID);
-  private apiUrl = `${environment.apiUrl}/auth`;
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly apiUrl = `${environment.apiUrl}/auth`;
 
-  private currentUserSubject = new BehaviorSubject<Usuario | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  // ============================================
+  // Métodos de Autenticación
+  // ============================================
 
-  private tokenKey = 'auth_token';
-  private userKey = 'current_user';
-
-  constructor() {
-    // Cargar usuario desde localStorage al iniciar (solo en el navegador)
-    if (isPlatformBrowser(this.platformId)) {
-      this.loadUserFromStorage();
-    }
-  }
-
-  login(correo: string, password: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { correo, password }).pipe(
-      tap(response => {
-        this.setSession(response);
-      }),
-      catchError(this.errorHandler.handleError)
+  /**
+   * Registro de empresa con usuario administrador (HU-01)
+   * POST /api/auth/signup
+   */
+  signup(signupRequest: SignupRequest): Observable<JwtAuthenticationResponse> {
+    return this.http.post<JwtAuthenticationResponse>(`${this.apiUrl}/signup`, signupRequest).pipe(
+      tap(response => this.saveSession(response))
     );
   }
 
-  register(empresa: any, usuario: any): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/register`, { empresa, usuario }).pipe(
-      tap(response => {
-        this.setSession(response);
-      }),
-      catchError(this.errorHandler.handleError)
+  /**
+   * Inicio de sesión (HU-03)
+   * POST /api/auth/login
+   */
+  login(loginDto: LoginDto): Observable<JwtAuthenticationResponse> {
+    return this.http.post<JwtAuthenticationResponse>(`${this.apiUrl}/login`, loginDto).pipe(
+      tap(response => this.saveSession(response))
     );
   }
 
+  /**
+   * Cierra sesión y limpia sessionStorage
+   */
   logout(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem(this.tokenKey);
-      localStorage.removeItem(this.userKey);
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      // Limpiar todos los datos de sessionStorage
+      Object.values(STORAGE_KEYS).forEach(key => {
+        sessionStorage.removeItem(key);
+      });
     }
-    this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
   }
 
-  private setSession(authResult: LoginResponse): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(this.tokenKey, authResult.token);
-      localStorage.setItem(this.userKey, JSON.stringify(authResult.usuario));
-    }
-    this.currentUserSubject.next(new Usuario(authResult.usuario));
+  // ============================================
+  // Verificaciones de Autenticación y Roles
+  // ============================================
+
+  /**
+   * Verifica si el usuario está autenticado
+   */
+  isAuthenticated(): boolean {
+    return !!this.token();
   }
 
-  private loadUserFromStorage(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      const userJson = localStorage.getItem(this.userKey);
-      if (userJson) {
-        const user = JSON.parse(userJson);
-        this.currentUserSubject.next(new Usuario(user));
-      }
-    }
+  /**
+   * Verifica si el usuario es ADMINISTRADOR
+   */
+  isAdministrador(): boolean {
+    return this.role() === UsuarioRol.ADMINISTRADOR;
   }
 
-  getToken(): string | null {
-    if (isPlatformBrowser(this.platformId)) {
-      return localStorage.getItem(this.tokenKey);
+  /**
+   * Verifica si el usuario es EDITOR
+   */
+  isEditor(): boolean {
+    return this.role() === UsuarioRol.EDITOR;
+  }
+
+  /**
+   * Verifica si el usuario es SOLO_LECTURA
+   */
+  isSoloLectura(): boolean {
+    return this.role() === UsuarioRol.SOLO_LECTURA;
+  }
+
+  /**
+   * Verifica si el usuario puede editar (ADMINISTRADOR o EDITOR)
+   */
+  canEdit(): boolean {
+    const rol = this.role();
+    return rol === UsuarioRol.ADMINISTRADOR || rol === UsuarioRol.EDITOR;
+  }
+
+  // ============================================
+  // Getters de Datos de Sesión
+  // ============================================
+
+  /**
+   * Obtiene el token JWT
+   */
+  token(): string | null {
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem(STORAGE_KEYS.JWT_TOKEN);
     }
     return null;
   }
 
-  getCurrentUser(): Usuario | null {
-    return this.currentUserSubject.value;
+  /**
+   * Obtiene el rol del usuario
+   */
+  role(): string | null {
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem(STORAGE_KEYS.ROLE);
+    }
+    return null;
   }
 
+  /**
+   * Obtiene el email del usuario
+   */
+  email(): string | null {
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem(STORAGE_KEYS.EMAIL);
+    }
+    return null;
+  }
+
+  /**
+   * Obtiene el nombre del usuario
+   */
+  nombre(): string | null {
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem(STORAGE_KEYS.NOMBRE);
+    }
+    return null;
+  }
+
+  /**
+   * Obtiene el ID del usuario
+   */
+  idUsuario(): number | null {
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      const id = sessionStorage.getItem(STORAGE_KEYS.ID_USUARIO);
+      return id ? parseInt(id, 10) : null;
+    }
+    return null;
+  }
+
+  /**
+   * Obtiene el ID de la empresa del usuario
+   */
+  empresaId(): number | null {
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      const id = sessionStorage.getItem(STORAGE_KEYS.EMPRESA_ID);
+      return id ? parseInt(id, 10) : null;
+    }
+    return null;
+  }
+
+  // ============================================
+  // Métodos Privados - Gestión de Sesión
+  // ============================================
+
+  /**
+   * Guarda la sesión en sessionStorage después de login/signup exitoso
+   */
+  private saveSession(response: JwtAuthenticationResponse): void {
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      try {
+        sessionStorage.setItem(STORAGE_KEYS.JWT_TOKEN, response.token);
+        sessionStorage.setItem(STORAGE_KEYS.EMAIL, response.usuario.email);
+        sessionStorage.setItem(STORAGE_KEYS.ROLE, response.usuario.rol);
+        sessionStorage.setItem(STORAGE_KEYS.NOMBRE, response.usuario.nombre);
+        sessionStorage.setItem(STORAGE_KEYS.ID_USUARIO, response.usuario.id.toString());
+        sessionStorage.setItem(STORAGE_KEYS.EMPRESA_ID, response.usuario.empresaId.toString());
+      } catch (error) {
+        console.error('Error al guardar sesión:', error);
+      }
+    }
+  }
+
+  // ============================================
+  // Métodos de Compatibilidad (Deprecated)
+  // ============================================
+
+  /**
+   * @deprecated Usar isAuthenticated() en su lugar
+   */
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    return this.isAuthenticated();
   }
 
+  /**
+   * @deprecated Usar isAdministrador() en su lugar
+   */
   isAdmin(): boolean {
-    const user = this.getCurrentUser();
-    return user?.rol === 'ADMINISTRADOR';
+    return this.isAdministrador();
   }
 
-  canEdit(): boolean {
-    const user = this.getCurrentUser();
-    return user?.rol === 'ADMINISTRADOR' || user?.rol === 'EDITOR';
+  /**
+   * Obtiene el token JWT (alias de token())
+   * @deprecated Usar token() en su lugar
+   */
+  getToken(): string | null {
+    return this.token();
+  }
+
+  /**
+   * Obtiene el usuario actual construido desde sessionStorage
+   */
+  getCurrentUser(): Usuario | null {
+    if (!this.isAuthenticated()) {
+      return null;
+    }
+    
+    return new Usuario({
+      id: this.idUsuario() || undefined,
+      nombre: this.nombre() || '',
+      correo: this.email() || '',
+      rol: this.role() as UsuarioRol || UsuarioRol.SOLO_LECTURA,
+      empresaId: this.empresaId() || 0
+    });
   }
 }

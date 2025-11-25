@@ -1,16 +1,40 @@
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard, editorGuard } from './shared/guards/auth.guard';
 
+/**
+ * Configuración de rutas de la aplicación con guards de protección
+ * 
+ * Rutas públicas (sin autenticación):
+ * - /login - Inicio de sesión
+ * - /register - Registro de empresa
+ * 
+ * Rutas con authGuard (requieren login - cualquier rol):
+ * - /home
+ * - /empresas/* (ver empresas)
+ * - /procesos/* (ver procesos)
+ * 
+ * Rutas con editorGuard (ADMINISTRADOR o EDITOR):
+ * - /procesos/nuevo, /procesos/:id/editar
+ * - /actividades/nueva, /actividades/:id/editar
+ * - /roles/* (gestión de roles)
+ * 
+ * Rutas con adminGuard (solo ADMINISTRADOR):
+ * - /usuarios/* (gestión de usuarios)
+ * - /empresas/nueva, /empresas/:id/editar (crear/editar empresas)
+ */
 export const routes: Routes = [
+  // ============================================
+  // Ruta raíz - Redirige a login
+  // ============================================
   {
     path: '',
-    redirectTo: '/home',
+    redirectTo: '/login',
     pathMatch: 'full'
   },
-  {
-    path: 'home',
-    loadComponent: () => import('./components/home/home/home.component').then(m => m.HomeComponent)
-  },
+
+  // ============================================
+  // Rutas Públicas (sin autenticación)
+  // ============================================
   {
     path: 'login',
     loadComponent: () => import('./components/usuario/login/login.component').then(m => m.LoginComponent)
@@ -19,9 +43,24 @@ export const routes: Routes = [
     path: 'register',
     loadComponent: () => import('./components/usuario/register/register.component').then(m => m.RegisterComponent)
   },
+
+  // ============================================
+  // Rutas Protegidas - authGuard (cualquier rol)
+  // ============================================
+  {
+    path: 'home',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/home/home/home.component').then(m => m.HomeComponent)
+  },
+
+  // ============================================
+  // Empresas - Requiere autenticación
+  // Ver empresas: Todos los roles
+  // Crear/Editar: Solo ADMINISTRADOR
+  // ============================================
   {
     path: 'empresas',
-    canActivate: [authGuard, adminGuard],
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -29,17 +68,25 @@ export const routes: Routes = [
       },
       {
         path: 'nueva',
+        canActivate: [adminGuard],
         loadComponent: () => import('./components/empresa/empresa-form/empresa-form.component').then(m => m.EmpresaFormComponent)
       },
       {
         path: 'editar/:id',
+        canActivate: [adminGuard],
         loadComponent: () => import('./components/empresa/empresa-form/empresa-form.component').then(m => m.EmpresaFormComponent)
       }
     ]
   },
+
+  // ============================================
+  // Procesos - Requiere autenticación
+  // Ver: Todos los roles
+  // Crear/Editar: ADMINISTRADOR o EDITOR
+  // ============================================
   {
     path: 'procesos',
-//    canActivate: [authGuard],
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -84,6 +131,35 @@ export const routes: Routes = [
       }
     ]
   },
+
+  // ============================================
+  // Usuarios - Solo ADMINISTRADOR
+  // ============================================
+  {
+    path: 'usuarios',
+    canActivate: [authGuard, adminGuard],
+    children: [
+      {
+        path: 'empresa/:empresaId',
+        loadComponent: () => import('./components/usuario/login/login.component').then(m => m.LoginComponent)
+        // TODO: Crear componente UsuariosListComponent
+      },
+      {
+        path: 'crear/:empresaId',
+        loadComponent: () => import('./components/usuario/login/login.component').then(m => m.LoginComponent)
+        // TODO: Crear componente UsuarioCreateComponent
+      },
+      {
+        path: ':id/editar',
+        loadComponent: () => import('./components/usuario/login/login.component').then(m => m.LoginComponent)
+        // TODO: Crear componente UsuarioEditComponent
+      }
+    ]
+  },
+
+  // ============================================
+  // Roles - ADMINISTRADOR o EDITOR
+  // ============================================
   {
     path: 'roles',
     canActivate: [authGuard, editorGuard],
@@ -102,14 +178,23 @@ export const routes: Routes = [
       }
     ]
   },
+
+  // ============================================
+  // Diagrama de proceso (temporal - deprecar)
+  // ============================================
   {
-  path: 'proceso/diagram',
-  loadComponent: () =>
-    import('./components/proceso/proceso-diagram/proceso-diagram.component')
-      .then(m => m.ProcesoDiagramComponent)
-},
+    path: 'proceso/diagram',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/proceso/proceso-diagram/proceso-diagram.component')
+        .then(m => m.ProcesoDiagramComponent)
+  },
+
+  // ============================================
+  // Ruta 404 - Redirige a home
+  // ============================================
   {
     path: '**',
-    redirectTo: '/home'
+    redirectTo: '/login'
   }
 ];

@@ -5,7 +5,15 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { authInterceptor } from './shared/interceptors/auth.interceptor';
+import { errorInterceptor } from './shared/interceptors/error.interceptor';
 
+/**
+ * Configuración global de la aplicación Angular 18+
+ * 
+ * Interceptors configurados (orden importa):
+ * 1. authInterceptor - Añade token JWT a todas las peticiones
+ * 2. errorInterceptor - Maneja errores HTTP de forma centralizada (401, 403, 404, 500)
+ */
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -13,7 +21,10 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
     provideHttpClient(
       withFetch(),
-      withInterceptors([authInterceptor])
+      withInterceptors([
+        authInterceptor,    // 1º - Añade token a peticiones
+        errorInterceptor    // 2º - Maneja errores
+      ])
     )
   ]
 };
