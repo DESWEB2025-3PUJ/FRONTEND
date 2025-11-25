@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable, signal, PLATFORM_ID } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, tap, catchError } from 'rxjs';
-import { Usuario } from '../../../models';
-import { environment } from '../../../../environments/environment.development';
+import { Usuario, UsuarioRol } from '../../../models';
+import { environment } from '../../../../environments/environment';
 import { ErrorHandlerService } from '../http/error-handler.service';
 
 export interface LoginRequest {
@@ -21,11 +21,12 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  
+
   private http = inject(HttpClient);
   private router = inject(Router);
   private errorHandler = inject(ErrorHandlerService);
   private platformId = inject(PLATFORM_ID);
+
   private apiUrl = `${environment.apiUrl}/auth`;
 
   private currentUserSubject = new BehaviorSubject<Usuario | null>(null);
@@ -34,32 +35,89 @@ export class AuthService {
   private tokenKey = 'auth_token';
   private userKey = 'current_user';
 
+  // BYPASS AUTH PARA PRUEBAS SELENIUM
+  private bypassAuth = environment.bypassAuth === true;
+
   constructor() {
-    // Cargar usuario desde localStorage al iniciar (solo en el navegador)
     if (isPlatformBrowser(this.platformId)) {
       this.loadUserFromStorage();
+    }
+
+    // Si bypassAuth está activo → simular usuario logueado
+    if (this.bypassAuth) {
+      const fakeUser = new Usuario({
+        id: 1,
+        nombre: 'Usuario Selenium',
+        correo: 'selenium@test.com',
+        rol: UsuarioRol.ADMINISTRADOR,
+        empresaId: 1
+      });
+
+      this.setSession({
+        token: 'fake-token',
+        usuario: fakeUser
+      });
     }
   }
 
   login(correo: string, password: string): Observable<LoginResponse> {
+    if (this.bypassAuth) {
+      const fakeUser = new Usuario({
+        id: 1,
+        nombre: 'Usuario Selenium',
+        correo,
+        rol: UsuarioRol.ADMINISTRADOR,
+        empresaId: 1
+      });
+
+      const response: LoginResponse = {
+        token: 'fake-token',
+        usuario: fakeUser
+      };
+
+      this.setSession(response);
+
+      return new Observable<LoginResponse>(obs => {
+        obs.next(response);
+        obs.complete();
+      });
+    }
+
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { correo, password }).pipe(
-      tap(response => {
-        this.setSession(response);
-      }),
+      tap(response => this.setSession(response)),
       catchError(this.errorHandler.handleError)
     );
   }
 
   register(empresa: any, usuario: any): Observable<LoginResponse> {
+    if (this.bypassAuth) {
+      const fakeUser = new Usuario({
+        ...usuario,
+        rol: 'ADMINISTRADOR',
+        empresaId: usuario.empresaId || 1
+      });
+
+      const response: LoginResponse = {
+        token: 'fake-token',
+        usuario: fakeUser
+      };
+
+      this.setSession(response);
+
+      return new Observable<LoginResponse>(obs => {
+        obs.next(response);
+        obs.complete();
+      });
+    }
+
     return this.http.post<LoginResponse>(`${this.apiUrl}/register`, { empresa, usuario }).pipe(
-      tap(response => {
-        this.setSession(response);
-      }),
+      tap(response => this.setSession(response)),
       catchError(this.errorHandler.handleError)
     );
   }
 
   logout(): void {
+    if (this.bypassAuth) return;
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem(this.tokenKey);
       localStorage.removeItem(this.userKey);
@@ -87,6 +145,7 @@ export class AuthService {
   }
 
   getToken(): string | null {
+    if (this.bypassAuth) return 'fake-token';
     if (isPlatformBrowser(this.platformId)) {
       return localStorage.getItem(this.tokenKey);
     }
@@ -98,16 +157,18 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
+    if (this.bypassAuth) return true;
     return !!this.getToken();
   }
 
   isAdmin(): boolean {
-    const user = this.getCurrentUser();
-    return user?.rol === 'ADMINISTRADOR';
+    if (this.bypassAuth) return true;
+    return this.currentUserSubject.value?.rol === 'ADMINISTRADOR';
   }
 
   canEdit(): boolean {
-    const user = this.getCurrentUser();
-    return user?.rol === 'ADMINISTRADOR' || user?.rol === 'EDITOR';
+    if (this.bypassAuth) return true;
+    const rol = this.currentUserSubject.value?.rol;
+    return rol === 'ADMINISTRADOR' || rol === 'EDITOR';
   }
 }

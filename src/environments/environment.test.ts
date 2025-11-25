@@ -2,5 +2,9 @@ import { Environment } from './environment.model';
 
 export const environment: Environment = {
   production: false,
-  apiUrl: 'http://localhost:8080/api'
+  apiUrl: 'http://localhost:8080/api',
+  bypassAuth: true,
+  bypassAdmin: true,
+  bypassEditor: true
 };
+

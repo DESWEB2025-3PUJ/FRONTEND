@@ -82,6 +82,14 @@
           "builder": "@angular-devkit/build-angular:extract-i18n"
         },
         "test": {
+          "fileReplacements": [
+            {
+              "replace": "src/environments/environment.ts",
+              "with": "src/environments/environment.test.ts"
+            }
+          ]
+        },
+        "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "polyfills": [
