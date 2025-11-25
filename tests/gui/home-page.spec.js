@@ -21,7 +21,7 @@ describe('Pruebas de interfaz gráfica - FRONTEND WIKIGROUP', function () {
   });
 
   it('debería cargar la página principal y mostrar el componente raíz', async function () {
-    // 1. Ir a tu app (asegúrate de que el frontend esté levantado con ng serve)
+    // 1. Ir a tu app
     await driver.get('http://localhost:4200');
 
     // 2. Esperar a que aparezca el componente raíz de Angular
