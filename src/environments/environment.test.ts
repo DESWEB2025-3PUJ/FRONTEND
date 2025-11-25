@@ -1,8 +1,8 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:8080/api',
-  bypassAuth: false,
-  bypassAdmin: false,
-  bypassEditor: false,
-  bypassApi: false
+  bypassAuth: true,
+  bypassAdmin: true,
+  bypassEditor: true,
+  bypassApi: true
 };

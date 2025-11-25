@@ -4,7 +4,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { Usuario, UsuarioRol } from '../../../models';
-import { environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment';
 
 // ============================================
 // Interfaces para autenticación JWT
@@ -63,7 +63,7 @@ const STORAGE_KEYS = {
 } as const;
 
 /**
- * Servicio de autenticación JWT para Angular 18+
+ * Servicio de autenticación JWT
  * Implementa autenticación con Spring Boot Backend
  * Usa sessionStorage para almacenamiento de datos
  */
@@ -71,11 +71,33 @@ const STORAGE_KEYS = {
   providedIn: 'root'
 })
 export class AuthService {
-  
+
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly apiUrl = `${environment.apiUrl}/auth`;
+
+  // FLAGS DE BYPASS PARA TESTS (environment.test.ts)
+  // En environment normal estos van en false
+  private readonly bypassAuth = environment['bypassAuth'] === true;
+
+  constructor() {
+    // En modo bypass (tests), simulamos un usuario logueado al arrancar
+    if (this.bypassAuth && isPlatformBrowser(this.platformId)) {
+      const fakeResponse: JwtAuthenticationResponse = {
+        token: 'fake-token',
+        usuario: {
+          id: 1,
+          nombre: 'Usuario Selenium',
+          email: 'selenium@test.com',
+          rol: UsuarioRol.ADMINISTRADOR,
+          empresaId: 1,
+          password: null
+        }
+      };
+      this.saveSession(fakeResponse);
+    }
+  }
 
   // ============================================
   // Métodos de Autenticación
@@ -86,9 +108,31 @@ export class AuthService {
    * POST /api/auth/signup
    */
   signup(signupRequest: SignupRequest): Observable<JwtAuthenticationResponse> {
-    return this.http.post<JwtAuthenticationResponse>(`${this.apiUrl}/signup`, signupRequest).pipe(
-      tap(response => this.saveSession(response))
-    );
+    // En modo tests, no llamamos al backend: simulamos respuesta
+    if (this.bypassAuth) {
+      const fakeResponse: JwtAuthenticationResponse = {
+        token: 'fake-token',
+        usuario: {
+          id: 1,
+          nombre: signupRequest.usuario.nombre || 'Usuario Selenium',
+          email: signupRequest.usuario.email,
+          rol: UsuarioRol.ADMINISTRADOR,
+          empresaId: 1,
+          password: null
+        }
+      };
+      this.saveSession(fakeResponse);
+
+      return new Observable<JwtAuthenticationResponse>(observer => {
+        observer.next(fakeResponse);
+        observer.complete();
+      });
+    }
+
+    // Flujo normal
+    return this.http
+      .post<JwtAuthenticationResponse>(`${this.apiUrl}/signup`, signupRequest)
+      .pipe(tap(response => this.saveSession(response)));
   }
 
   /**
@@ -96,17 +140,42 @@ export class AuthService {
    * POST /api/auth/login
    */
   login(loginDto: LoginDto): Observable<JwtAuthenticationResponse> {
-    return this.http.post<JwtAuthenticationResponse>(`${this.apiUrl}/login`, loginDto).pipe(
-      tap(response => this.saveSession(response))
-    );
+    // En modo tests, simulamos login
+    if (this.bypassAuth) {
+      const fakeResponse: JwtAuthenticationResponse = {
+        token: 'fake-token',
+        usuario: {
+          id: 1,
+          nombre: 'Usuario Selenium',
+          email: loginDto.correo,
+          rol: UsuarioRol.ADMINISTRADOR,
+          empresaId: 1,
+          password: null
+        }
+      };
+      this.saveSession(fakeResponse);
+
+      return new Observable<JwtAuthenticationResponse>(observer => {
+        observer.next(fakeResponse);
+        observer.complete();
+      });
+    }
+
+    // Flujo normal
+    return this.http
+      .post<JwtAuthenticationResponse>(`${this.apiUrl}/login`, loginDto)
+      .pipe(tap(response => this.saveSession(response)));
   }
 
   /**
    * Cierra sesión y limpia sessionStorage
    */
   logout(): void {
+    // Si quieres que el botón "Cerrar sesión" no haga nada en Selenium,
+    // puedes hacer return aquí en modo bypass:
+    // if (this.bypassAuth) { return; }
+
     if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
-      // Limpiar todos los datos de sessionStorage
       Object.values(STORAGE_KEYS).forEach(key => {
         sessionStorage.removeItem(key);
       });
@@ -122,6 +191,9 @@ export class AuthService {
    * Verifica si el usuario está autenticado
    */
   isAuthenticated(): boolean {
+    if (this.bypassAuth) {
+      return true;
+    }
     return !!this.token();
   }
 
@@ -129,6 +201,9 @@ export class AuthService {
    * Verifica si el usuario es ADMINISTRADOR
    */
   isAdministrador(): boolean {
+    if (this.bypassAuth) {
+      return true;
+    }
     return this.role() === UsuarioRol.ADMINISTRADOR;
   }
 
@@ -136,6 +211,9 @@ export class AuthService {
    * Verifica si el usuario es EDITOR
    */
   isEditor(): boolean {
+    if (this.bypassAuth) {
+      return true;
+    }
     return this.role() === UsuarioRol.EDITOR;
   }
 
@@ -143,6 +221,9 @@ export class AuthService {
    * Verifica si el usuario es SOLO_LECTURA
    */
   isSoloLectura(): boolean {
+    if (this.bypassAuth) {
+      return false;
+    }
     return this.role() === UsuarioRol.SOLO_LECTURA;
   }
 
@@ -150,6 +231,9 @@ export class AuthService {
    * Verifica si el usuario puede editar (ADMINISTRADOR o EDITOR)
    */
   canEdit(): boolean {
+    if (this.bypassAuth) {
+      return true;
+    }
     const rol = this.role();
     return rol === UsuarioRol.ADMINISTRADOR || rol === UsuarioRol.EDITOR;
   }
@@ -162,6 +246,9 @@ export class AuthService {
    * Obtiene el token JWT
    */
   token(): string | null {
+    if (this.bypassAuth) {
+      return 'fake-token';
+    }
     if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
       return sessionStorage.getItem(STORAGE_KEYS.JWT_TOKEN);
     }
@@ -275,12 +362,12 @@ export class AuthService {
     if (!this.isAuthenticated()) {
       return null;
     }
-    
+
     return new Usuario({
       id: this.idUsuario() || undefined,
       nombre: this.nombre() || '',
       correo: this.email() || '',
-      rol: this.role() as UsuarioRol || UsuarioRol.SOLO_LECTURA,
+      rol: (this.role() as UsuarioRol) || UsuarioRol.SOLO_LECTURA,
       empresaId: this.empresaId() || 0
     });
   }

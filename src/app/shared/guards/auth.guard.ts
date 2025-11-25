@@ -1,26 +1,30 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { AuthService } from '../services/auth/auth.service';
+import { environment } from '../../../environments/environment';
 
 /**
  * Guard de autenticación básica
  * Protege rutas que requieren que el usuario esté autenticado (cualquier rol)
- * 
+ *
  * Comportamiento:
- * - Si NO está autenticado → Redirige a /login
- * - Si está autenticado → Permite acceso ✅
- * 
- * Uso: Protege home, /empresas/*, /procesos/*, etc.
+ * - Si environment.bypassAuth === true → siempre permite acceso (útil en tests)
+ * - Si está autenticado → Permite acceso 
+ * - Si NO está autenticado → Redirige a /login con returnUrl
  */
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
+  // BYPASS para entornos como environment.test.ts
+  if ((environment as any).bypassAuth === true) {
+    return true;
+  }
+
   if (authService.isAuthenticated()) {
     return true;
   }
 
-  // No autenticado - redirigir a login con URL de retorno
   router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
   return false;
 };
@@ -28,30 +32,31 @@ export const authGuard: CanActivateFn = (route, state) => {
 /**
  * Guard de administrador
  * Protege rutas solo para usuarios con rol ADMINISTRADOR
- * 
+ *
  * Comportamiento:
+ * - Si environment.bypassAdmin === true → siempre permite acceso (tests)
  * - Si NO está autenticado → Redirige a /login
- * - Si está autenticado pero NO es ADMINISTRADOR → Redirige a /home con mensaje
- * - Si es ADMINISTRADOR → Permite acceso ✅
- * 
- * Uso: /usuarios/crear, /usuarios/:id/editar, /empresas/crear, /empresas/:id/eliminar
+ * - Si está autenticado pero NO es ADMINISTRADOR → Redirige a /home
+ * - Si es ADMINISTRADOR → Permite acceso 
  */
 export const adminGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Verificar si está autenticado
+  // BYPASS para tests / entorno sin auth real
+  if ((environment as any).bypassAdmin === true) {
+    return true;
+  }
+
   if (!authService.isAuthenticated()) {
     router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
     return false;
   }
 
-  // Verificar si es administrador
   if (authService.isAdministrador()) {
     return true;
   }
 
-  // No tiene permisos de administrador
   router.navigate(['/home']);
   return false;
 };
@@ -59,30 +64,32 @@ export const adminGuard: CanActivateFn = (route, state) => {
 /**
  * Guard de editor
  * Protege rutas para usuarios con rol ADMINISTRADOR o EDITOR
- * 
+ *
  * Comportamiento:
+ * - Si environment.bypassEditor === true → siempre permite acceso (tests)
  * - Si NO está autenticado → Redirige a /login
- * - Si está autenticado pero es SOLO_LECTURA → Redirige a /home con mensaje
- * - Si es ADMINISTRADOR o EDITOR → Permite acceso ✅
- * 
- * Uso: /procesos/crear, /procesos/:id/editar, /actividades/crear, /actividades/:id/editar
+ * - Si está autenticado pero es SOLO_LECTURA → Redirige a /home
+ * - Si es ADMINISTRADOR o EDITOR (canEdit() === true) → Permite acceso 
  */
 export const editorGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Verificar si está autenticado
+  // BYPASS para tests
+  if ((environment as any).bypassEditor === true) {
+    return true;
+  }
+
   if (!authService.isAuthenticated()) {
     router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
     return false;
   }
 
-  // Verificar si puede editar (ADMINISTRADOR o EDITOR)
   if (authService.canEdit()) {
     return true;
   }
 
-  // No tiene permisos de edición
   router.navigate(['/home']);
   return false;
 };
+
