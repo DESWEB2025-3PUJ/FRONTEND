@@ -56,19 +56,36 @@ export class LoginComponent implements OnInit {
     this.error.set(null);
 
     // Realizar login
+    console.log('📝 Enviando credenciales al servidor...');
     this.authService.login(credentials).subscribe({
       next: (response) => {
+        console.log('✅ Respuesta del servidor recibida:', response);
         this.loading.set(false);
         
         // Esperar un tick para asegurar que sessionStorage esté actualizado
         // antes de la redirección (evita race conditions con guards)
         setTimeout(() => {
+          console.log('🚀 Redirigiendo según rol:', response.usuario.rol);
           this.redirectByRole(response.usuario.rol, response.usuario.empresaId);
         }, 100);
       },
       error: (err) => {
+        console.error('❌ Error en login:', err);
+        console.error('Error completo:', JSON.stringify(err, null, 2));
         this.loading.set(false);
-        this.error.set(err.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+        
+        // Mejorar mensaje de error
+        let errorMsg = 'Error al iniciar sesión. ';
+        if (err.status === 0) {
+          errorMsg += 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.';
+        } else if (err.status === 401) {
+          errorMsg += 'Credenciales incorrectas.';
+        } else {
+          errorMsg += err.message || 'Verifica tus credenciales.';
+        }
+        
+        this.error.set(errorMsg);
+        console.error('💬 Mensaje mostrado al usuario:', errorMsg);
       }
     });
   }

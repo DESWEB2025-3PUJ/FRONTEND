@@ -28,8 +28,20 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      // LOGS DETALLADOS PARA DEBUGGING
+      console.group('🔴 Error HTTP Interceptado');
+      console.log('URL:', req.url);
+      console.log('Método:', req.method);
+      console.log('Status:', error.status);
+      console.log('Status Text:', error.statusText);
+      console.log('Error completo:', error);
+      console.log('Error body:', error.error);
+      console.log('Headers:', error.headers);
+      console.groupEnd();
+
       // En modo tests (bypass), no hagas side-effects (logout, navigate, etc.)
       if ((environment as any).bypassAuth === true || (environment as any).bypassApi === true) {
+        console.warn('⚠️ Modo bypass activado - no se ejecutan side effects');
         return throwError(() => error);
       }
 
@@ -37,41 +49,47 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       switch (error.status) {
         case 401:
-          console.error('Error 401: No autenticado. Cerrando sesión...');
+          console.error('❌ Error 401: No autenticado. Cerrando sesión...');
           errorMessage = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
           authService.logout();
           break;
 
         case 403:
-          console.error('Error 403: Sin permisos para esta acción');
+          console.error('❌ Error 403: Sin permisos para esta acción');
           errorMessage = 'No tienes permisos para realizar esta acción.';
           router.navigate(['/home']);
           break;
 
         case 404:
-          console.error('Error 404: Recurso no encontrado');
+          console.error('❌ Error 404: Recurso no encontrado');
           errorMessage = error.error?.message || 'El recurso solicitado no fue encontrado.';
           break;
 
         case 500:
-          console.error('Error 500: Error interno del servidor');
-          errorMessage = 'Error interno del servidor. Por favor, intenta más tarde.';
+          console.error('❌ Error 500: Error interno del servidor');
+          errorMessage = error.error?.message || 'Error interno del servidor. Por favor, intenta más tarde.';
           break;
 
         case 0:
-          console.error('Error de conexión: No se pudo conectar con el servidor');
-          errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+          console.error('❌ Error de conexión (status 0): No se pudo conectar con el servidor');
+          console.error('Posibles causas:');
+          console.error('  - El servidor backend no está corriendo');
+          console.error('  - Problemas de CORS');
+          console.error('  - URL incorrecta:', environment.apiUrl);
+          console.error('  - Firewall o red bloqueando la conexión');
+          errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo en ' + environment.apiUrl;
           break;
 
         default:
-          console.error(`Error ${error.status}:`, error.error);
+          console.error(`❌ Error ${error.status}:`, error.error);
           errorMessage = error.error?.message || `Error ${error.status}: ${error.statusText}`;
       }
 
       return throwError(() => ({
         status: error.status,
         message: errorMessage,
-        error: error.error
+        error: error.error,
+        originalError: error
       }));
     })
   );

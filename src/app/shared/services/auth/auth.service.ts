@@ -140,8 +140,13 @@ export class AuthService {
    * POST /api/auth/login
    */
   login(loginDto: LoginDto): Observable<JwtAuthenticationResponse> {
+    console.log('🔐 Intentando login...');
+    console.log('URL:', `${this.apiUrl}/login`);
+    console.log('Correo:', loginDto.correo);
+
     // En modo tests, simulamos login
     if (this.bypassAuth) {
+      console.log('⚠️ Modo bypass - usando datos simulados');
       const fakeResponse: JwtAuthenticationResponse = {
         token: 'fake-token',
         usuario: {
@@ -164,7 +169,12 @@ export class AuthService {
     // Flujo normal
     return this.http
       .post<JwtAuthenticationResponse>(`${this.apiUrl}/login`, loginDto)
-      .pipe(tap(response => this.saveSession(response)));
+      .pipe(
+        tap(response => {
+          console.log('✅ Login exitoso:', response);
+          this.saveSession(response);
+        })
+      );
   }
 
   /**

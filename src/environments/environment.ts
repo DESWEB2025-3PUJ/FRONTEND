@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080/api',
+  apiUrl: 'http://10.43.103.9:8080/api',
   // flags para pruebas / auth
   bypassAuth: false,
   bypassAdmin: false,
