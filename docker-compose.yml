@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  wikigroup:
+    build: .
+    container_name: wikigroup
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
