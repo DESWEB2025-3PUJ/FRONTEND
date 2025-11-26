@@ -1,9 +1,26 @@
 version: "3.9"
 
 services:
-  wikigroup:
-    build: .
-    container_name: wikigroup
+  wikigroup-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wikigroup-frontend
     restart: unless-stopped
     ports:
       - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - wikigroup-network
+
+networks:
+  wikigroup-network:
+    driver: bridge
