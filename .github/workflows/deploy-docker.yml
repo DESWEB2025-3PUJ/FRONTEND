@@ -20,7 +20,7 @@ jobs:
         run: |
           echo "🔍 Verificando Docker y Docker Compose..."
           docker --version
-          docker compose version
+          docker-compose --version
           echo "✅ Prerrequisitos OK"
 
       - name: Build & Restart Docker container
@@ -28,20 +28,20 @@ jobs:
           echo "🚀 Iniciando deploy del frontend..."
           
           # Detener contenedores existentes
-          docker compose down || true
+          docker-compose down || true
           
           # Limpiar imágenes antiguas (opcional)
           docker image prune -f || true
           
           # Construir y levantar el contenedor
-          docker compose up -d --build
+          docker-compose up -d --build
           
           echo "✅ Deploy completado exitosamente"
           
       - name: Verificar estado del contenedor
         run: |
           echo "📊 Estado de los contenedores:"
-          docker compose ps
+          docker-compose ps
           
           echo "📋 Logs recientes:"
-          docker compose logs --tail=50
+          docker-compose logs --tail=50
