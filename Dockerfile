@@ -5,8 +5,8 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production && npm cache clean --force
+# Instalar TODAS las dependencias (incluyendo devDependencies para el build)
+RUN npm ci && npm cache clean --force
 
 # Copiar el código fuente
 COPY . .
@@ -20,7 +20,7 @@ WORKDIR /app
 
 # Instalar solo las dependencias de producción necesarias para Express
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copiar los archivos compilados desde el stage de build
 COPY --from=build /app/dist/frontend-wikigroup ./dist/frontend-wikigroup
