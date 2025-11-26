@@ -10,7 +10,7 @@ on:
 jobs:
   deploy:
     # Usar self-hosted runner configurado en el servidor
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
