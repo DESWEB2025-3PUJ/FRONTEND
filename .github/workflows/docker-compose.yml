@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  frontend:
+    build: .
+    container_name: frontend-wikigroup
+    restart: unless-stopped
+    ports:
+      - "8080:4000"   # Host:Contenedor → http://10.43.103.98:8080
+    environment:
+      NODE_ENV: "production"
+      PORT: "4000"
