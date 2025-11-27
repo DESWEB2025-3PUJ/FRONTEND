@@ -1,152 +1,195 @@
-import { Component, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
-import * as fabric from 'fabric';
+import {
+  AfterViewInit, Component, ElementRef, ViewChild
+} from '@angular/core';
+import { newInstance, BrowserJsPlumbInstance } from '@jsplumb/community';
+
+type NodeType = 'inicio' | 'actividad' | 'decision' | 'fin';
 
 @Component({
   selector: 'app-canvas-draw',
   standalone: true,
   templateUrl: './canvas-draw.component.html',
-  styleUrls: ['./canvas-draw.component.css']
+  styleUrls: ['./canvas-draw.component.css'],
 })
 export class CanvasDrawComponent implements AfterViewInit {
-  @ViewChild('processCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  private canvas!: fabric.Canvas;
-  private nodes: fabric.Group[] = [];
-  private lines: { from: fabric.Group; to: fabric.Group; line: fabric.Line }[] = [];
+  @ViewChild('board', { static: true }) boardRef!: ElementRef<HTMLDivElement>;
 
-  private tempLine: fabric.Line | null = null;
-  private sourceNode: fabric.Group | null = null;
+  private jsp!: BrowserJsPlumbInstance;
+  private idSeq = 1;
 
-  ngAfterViewInit() {
-    this.canvas = new fabric.Canvas(this.canvasRef.nativeElement, {
-      width: 1100,
-      height: 650,
-      backgroundColor: '#f9fafb',
-      selection: false
+  /** Pila para deshacer (últimas acciones) */
+  private history: Array<
+    | { kind: 'connection'; connId: string }
+    | { kind: 'node'; el: HTMLElement }
+  > = [];
+
+  ngAfterViewInit(): void {
+    // 1) Crear instancia
+    this.jsp = newInstance({});
+    // En algunas versiones, el container no se pasa en el constructor
+    (this.jsp as any).setContainer(this.boardRef.nativeElement);
+
+    // 2) Import defaults (algunas versiones no lo tipan, hacemos cast a any)
+    (this.jsp as any).setSuspendDrawing?.(true);
+    (this.jsp as any).importDefaults?.({
+      connectionsDetachable: true,
+      reattachConnections: true,
+      connector: { type: 'Flowchart', options: { cornerRadius: 10, stub: 14 } },
+      paintStyle: { stroke: '#2c3e50', strokeWidth: 3 },
+      hoverPaintStyle: { stroke: '#0f172a', strokeWidth: 3 },
+      endpoint: { type: 'Dot', options: { radius: 5 } },
+      endpointStyle: { fill: '#1f2f40' },
+      anchor: 'AutoDefault',
     });
+    (this.jsp as any).setSuspendDrawing?.(false, true);
 
-    // Actualiza las líneas cuando se mueven los nodos
-    this.canvas.on('object:moving', () => this.updateConnections());
+    // 3) Eventos (usa strings para evitar conflictos de tipos)
+    (this.jsp as any).bind?.('connection', (info: any) => {
+      this.history.push({ kind: 'connection', connId: info.connection.id });
+    });
+    (this.jsp as any).bind?.('connection:detached', (_info: any) => {
+      // Si el usuario la borró, no apilamos nada adicional
+    });
   }
 
-  /** Crear un nodo visual */
-  public addNode(type: string, x: number, y: number) {
-    const colors: Record<string, string> = {
-      inicio: '#22c55e',
-      actividad: '#3b82f6',
-      decision: '#f59e0b',
-      fin: '#ef4444'
-    };
+  /** ============= API pública ============= */
 
-    const rect = new fabric.Rect({
-      width: 130,
-      height: 70,
-      fill: colors[type] || '#9ca3af',
-      rx: 10,
-      ry: 10,
-      stroke: '#1e293b',
-      strokeWidth: 1.5,
-      originX: 'center',
-      originY: 'center'
-    });
+  /** Crea un nodo nuevo en (x,y) del tipo indicado */
+  public addNode(type: string, x: number, y: number): void {
+    const t = (type?.toLowerCase() as NodeType) ?? 'actividad';
 
-    const text = new fabric.Text(type.charAt(0).toUpperCase() + type.slice(1), {
-      fontSize: 16,
-      fill: '#fff',
-      fontWeight: 'bold',
-      originX: 'center',
-      originY: 'center'
-    });
+    const el = document.createElement('div');
+    el.className = `proc-node ${this.cssForType(t)}`;
+    el.id = `node-${this.idSeq++}`;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    el.dataset['type'] = t;
 
-    const node = new fabric.Group([rect, text], {
-      left: x,
-      top: y,
-      hasControls: false
-    });
+    el.innerText = this.labelForType(t);
 
-    node.on('mousedown', () => this.handleNodeClick(node));
+    // “Puntos” visuales
+    const left = document.createElement('div');
+    left.className = 'proc-endpoint endpoint-left';
+    const right = document.createElement('div');
+    right.className = 'proc-endpoint endpoint-right';
+    el.appendChild(left);
+    el.appendChild(right);
 
-    this.canvas.add(node);
-    this.nodes.push(node);
+    this.boardRef.nativeElement.appendChild(el);
+
+    // Hacer draggable
+    (this.jsp as any).draggable?.(el, { containment: this.boardRef.nativeElement });
+
+    // Endpoints jsPlumb
+    this.addEndpoints(el);
+
+    // Pila para Undo
+    this.history.push({ kind: 'node', el });
   }
 
-  /** Maneja el clic en un nodo (inicio o fin de conexión) */
-  private handleNodeClick(node: fabric.Group) {
-    if (!this.sourceNode) {
-      // Primer clic → empezar línea temporal
-      this.sourceNode = node;
-
-      const center = node.getCenterPoint();
-      this.tempLine = new fabric.Line([center.x, center.y, center.x, center.y], {
-        stroke: '#2563eb',
-        strokeWidth: 2,
-        selectable: false,
-        evented: false
+  /** Exporta el diagrama (para el botón Guardar) */
+  public exportDiagram() {
+    const nodes: Array<{ id: string; type: string; x: number; y: number; w: number; h: number; name: string }> = [];
+    const all = this.boardRef.nativeElement.querySelectorAll<HTMLElement>('.proc-node');
+    const parentRect = this.boardRef.nativeElement.getBoundingClientRect();
+    all.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      nodes.push({
+        id: el.id,
+        type: el.dataset['type'] || 'actividad',
+        x: rect.left - parentRect.left,
+        y: rect.top - parentRect.top,
+        w: rect.width,
+        h: rect.height,
+        name: el.innerText.trim(),
       });
-      this.canvas.add(this.tempLine);
-
-      // Mover la punta con el mouse (sin tipado estricto)
-      this.canvas.on('mouse:move', (event: any) => this.handleMouseMove(event));
-    } else {
-      // Segundo clic → completar conexión
-      const targetNode = node;
-      if (targetNode !== this.sourceNode) {
-        this.createConnection(this.sourceNode, targetNode);
-      }
-
-      // Limpiar estado temporal
-      this.canvas.off('mouse:move');
-      if (this.tempLine) this.canvas.remove(this.tempLine);
-      this.tempLine = null;
-      this.sourceNode = null;
-    }
-  }
-
-  /** Mueve la punta de la línea mientras se arrastra el mouse */
-  private handleMouseMove(event: any) {
-    if (!this.tempLine) return;
-    const pointer = this.canvas.getPointer(event.e);
-    this.tempLine.set({ x2: pointer.x, y2: pointer.y });
-    this.canvas.requestRenderAll();
-  }
-
-  /**  Crear línea definitiva entre dos nodos */
-  private createConnection(from: fabric.Group, to: fabric.Group) {
-    const { x1, y1, x2, y2 } = this.calculateEdgePoints(from, to);
-    const line = new fabric.Line([x1, y1, x2, y2], {
-      stroke: '#2563eb',
-      strokeWidth: 2,
-      selectable: false,
-      evented: false
     });
 
-    this.canvas.add(line);
-    this.canvas.sendObjectToBack(line); 
-    this.lines.push({ from, to, line });
-    this.updateConnections();
+    const conns: any[] = ((this.jsp as any).getConnections?.() ?? []);
+    const edges = conns.map((c: any) => ({
+      id: c.id,
+      from: (c.source as HTMLElement).id,
+      to: (c.target as HTMLElement).id,
+    }));
+
+    return {
+      name: 'Proceso sin título',
+      activities: nodes,
+      edges,
+    };
   }
 
-  /** Reposicionar líneas cuando se mueven los nodos */
-  private updateConnections() {
-    for (const conn of this.lines) {
-      const { x1, y1, x2, y2 } = this.calculateEdgePoints(conn.from, conn.to);
-      conn.line.set({ x1, y1, x2, y2 });
+  /** Deshacer última acción (conexión o nodo) */
+  public undoLastAction(): void {
+    const last = this.history.pop();
+    if (!last) return;
+
+    if (last.kind === 'connection') {
+      const conns: any[] = ((this.jsp as any).getConnections?.() ?? []);
+      const conn = conns.find((c: any) => c.id === last.connId);
+      if (conn) (this.jsp as any).deleteConnection?.(conn);
+    } else {
+      const el = last.el;
+      // Quita endpoints y conexiones del nodo
+      (this.jsp as any).remove?.(el);
+      el.remove();
     }
-    this.canvas.requestRenderAll();
   }
 
-  /**  Calcula los puntos de conexión en los bordes */
-  private calculateEdgePoints(r1: fabric.Group, r2: fabric.Group) {
-    const c1 = r1.getCenterPoint();
-    const c2 = r2.getCenterPoint();
-    const angle = Math.atan2(c2.y - c1.y, c2.x - c1.x);
-    const w1 = (r1.width ?? 100) / 2;
-    const h1 = (r1.height ?? 50) / 2;
-    const w2 = (r2.width ?? 100) / 2;
-    const h2 = (r2.height ?? 50) / 2;
-    const x1 = c1.x + w1 * Math.cos(angle);
-    const y1 = c1.y + h1 * Math.sin(angle);
-    const x2 = c2.x - w2 * Math.cos(angle);
-    const y2 = c2.y - h2 * Math.sin(angle);
-    return { x1, y1, x2, y2 };
+  /** Limpiar todo el tablero */
+  public clearAll(): void {
+    (this.jsp as any).deleteEveryConnection?.();
+
+    // Borrar endpoints existentes
+    const sel = (this.jsp as any).selectEndpoints?.();
+    if (sel?.each) {
+      sel.each((ep: any) => (this.jsp as any).deleteEndpoint?.(ep));
+    }
+
+    // Quitar nodos del DOM
+    const nodes = this.boardRef.nativeElement.querySelectorAll('.proc-node');
+    nodes.forEach((n) => n.remove());
+
+    // Limpiar pila
+    this.history = [];
+  }
+
+  /** ========================= Internas ========================= */
+
+  private addEndpoints(el: HTMLElement) {
+    (this.jsp as any).addEndpoint?.(el, {
+      anchor: 'Left',
+      isSource: true,
+      isTarget: true,
+      maxConnections: -1,
+      connectionsDetachable: true,
+    });
+
+    (this.jsp as any).addEndpoint?.(el, {
+      anchor: 'Right',
+      isSource: true,
+      isTarget: true,
+      maxConnections: -1,
+      connectionsDetachable: true,
+    });
+  }
+
+  private cssForType(t: NodeType) {
+    switch (t) {
+      case 'inicio': return 'proc-inicio';
+      case 'actividad': return 'proc-actividad';
+      case 'decision': return 'proc-decision';
+      case 'fin': return 'proc-fin';
+      default: return 'proc-actividad';
+    }
+  }
+  private labelForType(t: NodeType) {
+    switch (t) {
+      case 'inicio': return 'Inicio';
+      case 'actividad': return 'Actividad';
+      case 'decision': return 'Decisión';
+      case 'fin': return 'Fin';
+      default: return 'Actividad';
+    }
   }
 }

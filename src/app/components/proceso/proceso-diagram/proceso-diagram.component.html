@@ -1,39 +1,32 @@
-<div class="diagram-page">
-  <button class="btn-volver" (click)="backToList()">← Volver</button>
+<div class="diagram-container">
+  <div class="header">
+    <div class="button-row">
+      <button class="btn-volver" (click)="backToList()">← Volver</button>
+      <button class="btn-guardar" (click)="guardarProceso()">💾 Guardar Proceso</button>
+      <button class="btn-undo" (click)="undoLast()">↩️ Deshacer</button>
+      <button class="btn-clear" (click)="clearCanvas()">🧹 Limpiar</button>
+    </div>
 
-  <h2 class="title">Editor de Procesos</h2>
-  <p class="subtitle">Arrastra componentes desde la izquierda y conéctalos.</p>
+    <h1>Editor de Procesos</h1>
+    <p class="subtitle">Arrastra componentes desde la izquierda y conéctalos.</p>
+  </div>
 
-  <div class="editor-container">
-    <!-- Panel lateral -->
+  <div class="content">
     <aside class="sidebar">
-      <h3>Componentes</h3>
-      <div
-        class="node-option inicio"
-        draggable="true"
-        (dragstart)="onDragStart($event, 'inicio')"
-      >Inicio</div>
-      <div
-        class="node-option actividad"
-        draggable="true"
-        (dragstart)="onDragStart($event, 'actividad')"
-      >Actividad</div>
-      <div
-        class="node-option decision"
-        draggable="true"
-        (dragstart)="onDragStart($event, 'decision')"
-      >Decisión</div>
-      <div
-        class="node-option fin"
-        draggable="true"
-        (dragstart)="onDragStart($event, 'fin')"
-      >Fin</div>
-
-      <p class="tip">Consejo: conecta arrastrando desde los puntos azules.</p>
+      <h2>Componentes</h2>
+      <ul class="component-list">
+        <li draggable="true" (dragstart)="onDragStart($event, 'inicio')" class="comp inicio">Inicio</li>
+        <li draggable="true" (dragstart)="onDragStart($event, 'actividad')" class="comp actividad">Actividad</li>
+        <li draggable="true" (dragstart)="onDragStart($event, 'decision')" class="comp decision">Decisión</li>
+        <li draggable="true" (dragstart)="onDragStart($event, 'fin')" class="comp fin">Fin</li>
+      </ul>
+      <p class="tip">💡 Consejo: conecta desde los puntos azules.</p>
     </aside>
 
-    <!-- Área de dibujo -->
-    <section class="canvas-area" (drop)="onCanvasDrop($event)" (dragover)="onCanvasDragOver($event)">
+    <section class="canvas-area"
+             (dragover)="onCanvasDragOver($event)"
+             (drop)="onCanvasDrop($event)">
+      <!-- El hijo maneja nodos/conexiones -->
       <app-canvas-draw></app-canvas-draw>
     </section>
   </div>

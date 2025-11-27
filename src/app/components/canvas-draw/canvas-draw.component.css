@@ -1,14 +1,69 @@
-.canvas-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #f3f4f6;
+/* Lienzo/board */
+.board {
+  position: relative;
+  width: 100%;
+  height: 600px;
   border-radius: 10px;
-  padding: 10px;
+  background: #ffffff;
+  overflow: hidden;
 }
 
-canvas {
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+/* Nodo visual (mantengo tu estética) */
+.proc-node {
+  position: absolute;
+  min-width: 180px;
+  min-height: 90px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(16, 24, 40, .06);
+  border: 2px solid #1e293b33;
+  color: #fff;
+  font-weight: 800;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  cursor: move;
+}
+
+/* Colores coherentes con tu paleta */
+.proc-inicio    { background: #22c55e; }
+.proc-actividad { background: #3b82f6; }
+.proc-decision  { background: #f59e0b; }
+.proc-fin       { background: #ef4444; }
+
+/* Punto (endpoint) */
+.proc-endpoint {
+  width: 12px;
+  height: 12px;
+  background: #1f2f40;
+  border-radius: 999px;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
+
+/* Coloco uno a la derecha y otro a la izquierda */
+.endpoint-left  { left: 0;  top: 50%; }
+.endpoint-right { right: 0; top: 50%; }
+
+/* Estilos de conexiones (jsPlumb) */
+.jtk-connector {
+  stroke: #2c3e50;
+  stroke-width: 3;
+}
+.jtk-connector.jtk-hover {
+  stroke: #0f172a;
+}
+.jtk-endpoint {
+  fill: #1f2f40;
+}
+.jtk-overlay {
+  pointer-events: none;
+}
+
+/* Selección visual al arrastrar sobre destino */
+.jtk-endpoint-hover, .jtk-source-hover, .jtk-target-hover {
+  filter: brightness(1.1);
 }
